@@ -7,4 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Swagger' => array($vendorDir . '/thefrozenfire/swagger/src', $vendorDir . '/thefrozenfire/swagger-client/src'),
+    'CallFire' => array($vendorDir . '/callfire/php-sdk/src'),
 );
