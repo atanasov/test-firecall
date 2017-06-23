@@ -75,7 +75,7 @@ class Operation extends AbstractObject
     
     public function getParameters()
     {
-        return $this->getDocumentObjectProperty('parameters', Parameter::class);
+        return $this->getDocumentObjectProperty('parameters', Parameter::class, true);
     }
     
     public function setParameters($parameters)

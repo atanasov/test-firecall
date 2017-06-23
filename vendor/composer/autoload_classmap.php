@@ -16,9 +16,8 @@ return array(
     'Swagger\\Object\\AbstractObjectTest' => $vendorDir . '/thefrozenfire/swagger/tests/Swagger/Object/AbstractObjectTest.php',
     'Swagger\\Object\\CollectionObjectTraitTest' => $vendorDir . '/thefrozenfire/swagger/tests/Swagger/Object/CollectionObjectTraitTest.php',
     'Swagger\\Object\\ReferentialTraitTest' => $vendorDir . '/thefrozenfire/swagger/tests/Swagger/Object/ReferentialTraitTest.php',
+    'Swagger\\Object\\ValueObjectTraitTest' => $vendorDir . '/thefrozenfire/swagger/tests/Swagger/Object/ValueObjectTraitTest.php',
     'Swagger\\OperationReferenceTest' => $vendorDir . '/thefrozenfire/swagger/tests/Swagger/OperationReferenceTest.php',
     'Swagger\\SchemaResolverTest' => $vendorDir . '/thefrozenfire/swagger/tests/Swagger/SchemaResolverTest.php',
     'Swagger\\TestableClient' => $vendorDir . '/thefrozenfire/swagger-client/tests/Swagger/AbstractClientTest.php',
-    'test\\Integration\\AbstractTest' => $vendorDir . '/callfire/php-sdk/test/Callfire/Api/AbstractTest.php',
-    'test\\Integration\\ClientTest' => $vendorDir . '/callfire/php-sdk/test/Callfire/Api/ClientTest.php',
 );

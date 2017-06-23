@@ -17,7 +17,7 @@ class Responses extends AbstractObject
     
     public function getDefault()
     {
-        return $this->getDocumentObjectProperty('default', Response::class);
+        return $this->getDocumentObjectProperty('default', Response::class, true);
     }
     
     public function setDefault($default)
@@ -27,7 +27,7 @@ class Responses extends AbstractObject
     
     public function getHttpStatusCode($code)
     {
-        return $this->getDocumentObjectProperty($code, Response::class);
+        return $this->getDocumentObjectProperty($code, Response::class, true);
     }
     
     public function setHttpStatusCode($code, $response)

@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit0d1fb2c622a6ccb81c17e1f872e069ca
+class ComposerStaticInit2a0891bdcd3a575c7d2f8bd5d5481239
 {
     public static $prefixLengthsPsr4 = array (
         'Z' => 
@@ -15,10 +15,6 @@ class ComposerStaticInit0d1fb2c622a6ccb81c17e1f872e069ca
             'Zend\\Loader\\' => 12,
             'Zend\\Http\\' => 10,
             'Zend\\Escaper\\' => 13,
-        ),
-        'P' => 
-        array (
-            'Psr\\Container\\' => 14,
         ),
         'I' => 
         array (
@@ -50,10 +46,6 @@ class ComposerStaticInit0d1fb2c622a6ccb81c17e1f872e069ca
         'Zend\\Escaper\\' => 
         array (
             0 => __DIR__ . '/..' . '/zendframework/zend-escaper/src',
-        ),
-        'Psr\\Container\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/psr/container/src',
         ),
         'Interop\\Container\\' => 
         array (
@@ -90,20 +82,19 @@ class ComposerStaticInit0d1fb2c622a6ccb81c17e1f872e069ca
         'Swagger\\Object\\AbstractObjectTest' => __DIR__ . '/..' . '/thefrozenfire/swagger/tests/Swagger/Object/AbstractObjectTest.php',
         'Swagger\\Object\\CollectionObjectTraitTest' => __DIR__ . '/..' . '/thefrozenfire/swagger/tests/Swagger/Object/CollectionObjectTraitTest.php',
         'Swagger\\Object\\ReferentialTraitTest' => __DIR__ . '/..' . '/thefrozenfire/swagger/tests/Swagger/Object/ReferentialTraitTest.php',
+        'Swagger\\Object\\ValueObjectTraitTest' => __DIR__ . '/..' . '/thefrozenfire/swagger/tests/Swagger/Object/ValueObjectTraitTest.php',
         'Swagger\\OperationReferenceTest' => __DIR__ . '/..' . '/thefrozenfire/swagger/tests/Swagger/OperationReferenceTest.php',
         'Swagger\\SchemaResolverTest' => __DIR__ . '/..' . '/thefrozenfire/swagger/tests/Swagger/SchemaResolverTest.php',
         'Swagger\\TestableClient' => __DIR__ . '/..' . '/thefrozenfire/swagger-client/tests/Swagger/AbstractClientTest.php',
-        'test\\Integration\\AbstractTest' => __DIR__ . '/..' . '/callfire/php-sdk/test/Callfire/Api/AbstractTest.php',
-        'test\\Integration\\ClientTest' => __DIR__ . '/..' . '/callfire/php-sdk/test/Callfire/Api/ClientTest.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit0d1fb2c622a6ccb81c17e1f872e069ca::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit0d1fb2c622a6ccb81c17e1f872e069ca::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit0d1fb2c622a6ccb81c17e1f872e069ca::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit0d1fb2c622a6ccb81c17e1f872e069ca::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit2a0891bdcd3a575c7d2f8bd5d5481239::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit2a0891bdcd3a575c7d2f8bd5d5481239::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit2a0891bdcd3a575c7d2f8bd5d5481239::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit2a0891bdcd3a575c7d2f8bd5d5481239::$classMap;
 
         }, null, ClassLoader::class);
     }

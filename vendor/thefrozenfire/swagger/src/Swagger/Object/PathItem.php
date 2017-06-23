@@ -1,9 +1,17 @@
 <?php
 namespace Swagger\Object;
 
-class PathItem extends AbstractObject implements ReferentialInterface
+class PathItem extends AbstractObject
 {
-    use ReferentialTrait;
+    public function getRef()
+    {
+        return $this->getDocumentProperty('$ref');
+    }
+    
+    public function setRef($ref)
+    {
+        return $this->setDocumentProperty('$ref', $ref);
+    }
     
     public function getGet()
     {
@@ -77,7 +85,7 @@ class PathItem extends AbstractObject implements ReferentialInterface
     
     public function getParameters()
     {
-        return $this->getDocumentObjectProperty('parameters', Parameter::class);
+        return $this->getDocumentObjectProperty('parameters', Parameter::class, true);
     }
     
     public function setParameters($parameters)

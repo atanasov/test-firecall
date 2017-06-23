@@ -1,7 +1,7 @@
 <?php
 namespace Swagger\Object;
 
-trait TypeObjectTrait
+trait ValueObjectTrait
 {
     public function getType()
     {

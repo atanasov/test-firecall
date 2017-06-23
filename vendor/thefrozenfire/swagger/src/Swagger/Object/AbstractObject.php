@@ -56,11 +56,7 @@ abstract class AbstractObject implements ObjectInterface
         return $this;
     }
     
-    public function hasDocumentProperty($name) {
-        return property_exists($this->getDocument(), $name);
-    }
-    
-    public function getDocumentObjectProperty($name, $swaggerObjectClass)
+    public function getDocumentObjectProperty($name, $swaggerObjectClass, $allowsRef = false)
     {
         $value = $this->getDocumentProperty($name);
         
@@ -68,12 +64,20 @@ abstract class AbstractObject implements ObjectInterface
             $newValue = [];
             
             foreach($value as $key => $arrayValue) {
-                $newValue[$key] = new $swaggerObjectClass($arrayValue);
+                if($allowsRef && property_exists($arrayValue, '$ref')) {
+                    $newValue[$key] = new Reference($arrayValue);
+                } else {
+                    $newValue[$key] = new $swaggerObjectClass($arrayValue);
+                }
             }
             
             return $newValue;
         } else {
-            return new $swaggerObjectClass($value);
+            if($allowsRef && $value instanceof stdClass && property_exists($value, '$ref')) {
+                return new Reference($value);
+            } else {
+                return new $swaggerObjectClass($value);
+            }
         }
     }
     

@@ -2,13 +2,12 @@
 namespace Swagger\Object\Parameter;
 
 use Swagger\Object\Items;
-use Swagger\Object\TypeObjectTrait;
-use Swagger\Object\TypeObjectInterface;
+use Swagger\Object\ValueObjectTrait;
 use Swagger\Object\Parameter as AbstractParameter;
 
-abstract class Generic extends AbstractParameter implements TypeObjectInterface
+abstract class Generic extends AbstractParameter
 {
-    use TypeObjectTrait;
+    use ValueObjectTrait;
     
     public function getAllowEmptyValue()
     {

@@ -7,225 +7,108 @@ class SchemaResolver
 {
     protected $document;
     
-    protected $relativeResolvers;
+    protected $strict = true;
     
-    /**
-     * Construct a new schema resolver
-     *
-     * @param Document $document - The underlying schema document
-     * @param array $relativeResolvers - An array of relative resolvers or types
-     */
-    public function __construct(
-        Document $document,
-        $relativeResolvers = []
-    )
+    public function __construct(Document $document)
     {
         $this->setDocument($document);
-        $this->setRelativeResolvers($relativeResolvers);
     }
     
-    /**
-     * Parse a type-object with data into its respective structure
-     *
-     * @param Object\TypeObjectInterface $type - The schema for the type
-     * @param \stdClass $data - The input data
-     * @return SchemaObject|array
-     */
-    public function parseType(Object\TypeObjectInterface $type, $data)
+    public function parseDataObject($type, \stdClass $data)
     {
-        if($type instanceof Object\Items) {
-            return $this->parseItemsObject($type, $data);
+        $dataObject = new DataObject($type);
+        if(is_string($type)) {
+            $schema = $this->findSchemaForType($type);
         } elseif($type instanceof Object\Schema) {
-            return $this->parseSchemaObject($type, $data);
+            $schema = $type;
         } else {
-            return $data;
+            throw new \InvalidArgumentException('$type parameter must be a definition name or Schema object');
         }
-    }
-    
-    public function findTypeAtPointer(Json\Pointer $pointer)
-    {
-        switch($pointer->getSegment(0)) {
-            case 'paths':
-                return $this->getDocument()
-                    ->getPaths()
-                    ->getPath($pointer->getSegment(1));
-            case 'definitions':
-                return $this->getDocument()
-                    ->getDefinitions()
-                    ->getDefinition($pointer->getSegment(1));
-            case 'parameters':
-                return $this->getDocument()
-                    ->getParameters()
-                    ->getParameter($pointer->getSegment(1));
-            case 'responses':
-                return $this->getDocument()
-                    ->getResponses()
-                    ->getHttpStatusCode($pointer->getSegment(1));
-            case 'securityDefinitions':
-                return $this->getDocument()
-                    ->getSecurityDefinitions()
-                    ->getDefinition($pointer->getSegment(1));
-            default:
-                throw new \OutOfBoundsException('The specified type path is not supported');
-        }
-    }
-    
-    public function findSchemaForOperationResponse(Object\Operation $operation, $statusCode)
-    {
-        try {
-            $response = $operation->getResponses()
-                ->getHttpStatusCode($statusCode);
-        } catch(SwaggerException\MissingDocumentPropertyException $e) {
-            // This status is not defined, but we can hope for an operation default
-            try {
-                $response = $operation->getResponses()
-                    ->getDefault();
-            } catch(SwaggerException\MissingDocumentPropertyException $e) {
-                throw (new SwaggerException\UndefinedOperationResponseSchemaException)
-                    ->setOperationId($operation->getOperationId())
-                    ->setStatusCode($statusCode);
-            }
-        }
-        
-        try {
-            $responseSchema = $response->getSchema();
-        } catch(SwaggerException\MissingDocumentPropertyException $e) {
-            throw (new SwaggerException\UndefinedOperationResponseSchemaException)
-                ->setOperationId($operation->getOperationId())
-                ->setStatusCode($statusCode);
-        }
-        
-        return $this->resolveReference($responseSchema);
-    }
-    
-    /**
-     * Parse data into a SchemaObject as defined by a Schema
-     *
-     * @param Object\Schema $schema
-     * @param \stdClass $data
-     * @return SchemaObject
-     */
-    protected function parseSchemaObject(Object\Schema $schema, \stdClass $data)
-    {
-        $schemaObject = new SchemaObject($schema->getType());
         
         foreach(array_keys(get_object_vars($data)) as $propertyKey) {
+            $propertyValue = $data->$propertyKey;
             try {
-                $propertySchema = $this->findSchemaForProperty($schema, $propertyKey);
+                $propertySchema = $this->findSchemaForProperty($schema, $propertyKey, true);
             } catch(SwaggerException\MissingDocumentPropertyException $e) {
                 throw (new SwaggerException\UndefinedPropertySchemaException)
-                    ->setPropertyName($name)
+                    ->setPropertyName($propertyKey)
                     ->setSchema($schema);
             }
-        
-            $propertyValue = $this->parseType(
-                $propertySchema,
-                $data->$propertyKey
-            );
             
-            $schemaObject->setProperty($propertyKey, $propertyValue);
+            if($propertySchema instanceof Object\Items) {
+                $propertyValue = $this->parseDataArray($propertySchema, $propertyValue);
+            
+                // TODO: Constrain primitives
+                $dataObject->setProperty($propertyKey, $propertyValue);
+            } elseif($propertySchema instanceof Object\Schema) {
+                $propertyObject = $this->parseDataObject($propertySchema, $propertyValue);
+                
+                $dataObject->setProperty($propertyKey, $propertyObject);
+            } else {
+                throw new \UnexpectedValueException('Property schema is not of type Items or Schema');
+            }
         }
         
-        return $schemaObject;
+        return $dataObject;
     }
     
-    /**
-     * Parse an array as defined by an Items object
-     *
-     * @param Object\Items $items
-     * @param array $data
-     * @return array
-     */
-    protected function parseItemsObject(Object\Items $items, $data)
+    protected function parseDataArray(Object\Items $schema, $data)
     {
-        if($items->getType() == 'array') {
-            $arrayItems = $items->getItems();
+        if($schema->getType() === 'array') {
+            $arrayItemSchema = $schema->getItems();
+            if($arrayItemSchema instanceof ReferentialInterface) {
+                $arrayItemSchema = $this->resolveReference($arrayItemSchema);
+            }
             foreach($data as $key => $value) {
-                $data[$key] = $this->parseItemsObject($arrayItems, $value);
+                if($arrayItemSchema instanceof Object\Items) {
+                    if($arrayItemSchema->getType() === 'array') {
+                        // Holy nested arrays, Batman!
+                        $data[$key] = $this->parseDataArray($arrayItemSchema, $value);
+                    }
+                } elseif($arrayItemSchema instanceof Object\Schema) {
+                    $data[$key] = $this->parseDataObject($arrayItemSchema, $value);
+                } else {
+                    throw new \UnexpectedValueException('Array item schema is not of type Items or Schema');
+                }
             }
         }
         
         return $data;
     }
     
-    protected function findSchemaForProperty(Object\Schema $schema, $property)
+    public function findSchemaForType($type)
     {
-        try {
-            $propertySchema = $schema->getProperties()
-                ->getProperty($property);
-        } catch(SwaggerException\MissingDocumentPropertyException $e) {
-            try {
-                $propertySchema = $this->findPropertyInAllOf($schema, $property);
-            } catch(SwaggerException\MissingDocumentPropertyException $e) {
-                $propertySchema = $this->findPropertyInAdditionalProperties($schema, $property);
-            }
-        }
+        $schema = $this->getDocument()
+            ->getDefinitions()
+            ->getDefinition($type);
         
-        $propertySchema = $this->resolveReference($propertySchema);
-        
-        return $propertySchema;
+        return $schema;
     }
     
-    protected function findPropertyInAllOf(Object\Schema $schema, $property)
+    public function findSchemaForProperty(Object\Schema $schema, $property, $resolve = true)
     {
-        $composingSchemas = $schema->getAllOf();
-                
-        foreach($composingSchemas as $composingSchema) {
-            $composingSchema = $this->resolveReference($composingSchema);
-            
-            try {
-                $propertySchema = $this->findSchemaForProperty($composingSchema, $property);
-            } catch(SwaggerException\MissingDocumentPropertyException $e) {
-                // This one doesn't have it, but let's try the rest
-            }
-        }
+        $properties = $schema->getProperties();
         
-        if(empty($propertySchema)) {
-            throw (new SwaggerException\MissingDocumentPropertyException)
-                ->setDocumentProperty($property);
+        $propertySchema = $properties->getProperty($property);
+        
+        if($resolve && $propertySchema instanceof Object\Reference) {
+            $propertySchema = $this->resolveReference($propertySchema);
         }
         
         return $propertySchema;
     }
     
-    protected function findPropertyInAdditionalProperties(Object\Schema $schema, $property)
+    public function resolveReference(Object\ReferentialInterface $reference)
     {
-        $additionalProperties = $this->resolveReference(
-            $schema->getAdditionalProperties()
-        );
-        
-        $propertySchema = $this->findSchemaForProperty($additionalProperties, $property);
-        
-        return $propertySchema;
-    }
-    
-    protected function resolveReference(Object\ReferentialInterface $reference)
-    {
-        if(!$reference->hasRef()) {
-            return $reference;
-        }
-    
         $ref = $reference->getRef();
     
-        if($reference->hasUri()) {
-            $uri = $reference->getUri();
-            if(!$this->hasRelativeResolver($uri)) {
-                throw (new SwaggerException\RelativeResolverUnavailableException)
-                    ->setUri($uri);
-            }
-            
-            $resolver = $this->getRelativeResolver($uri);
-            
-            if($resolver instanceof Object\AbstractObject) {
-                return $resolver;
-            } elseif(!($resolver instanceof SchemaResolver)) {
-                throw new \UnexpectedValueException('Relative resolvers much be a SchemaResolver or a resolved type');
-            }
-        } else {
-            $resolver = $this;
+        if(substr($ref, 0, strlen('#/definitions/')) !== '#/definitions/') {
+            throw new \LogicException('Relative schemas are not yet supported');
         }
+    
+        $schemaName = substr($ref, strlen('#/definitions/'));
         
-        return $resolver->findTypeAtPointer($reference->getPointer());
+        return $this->findSchemaForType($schemaName);
     }
     
     protected function getDocument()
@@ -239,19 +122,14 @@ class SchemaResolver
         return $this;
     }
     
-    protected function setRelativeResolvers($relativeResolvers)
+    public function getStrict()
     {
-        $this->relativeResolvers = $relativeResolvers;
+        return $this->strict;
+    }
+    
+    public function setStrict($strict)
+    {
+        $this->strict = $strict;
         return $this;
-    }
-    
-    protected function hasRelativeResolver($path)
-    {
-        return !empty($this->relativeResolvers[$path]);
-    }
-    
-    protected function getRelativeResolver($path)
-    {
-        return $this->relativeResolvers[$path];
     }
 }
